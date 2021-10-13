@@ -478,6 +478,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         this.watchManager.save();
     }
 
+    onWillStop(): boolean {
+        return !!this.manager.currentSession;
+    }
+
     registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
         const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
