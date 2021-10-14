@@ -717,7 +717,11 @@ export namespace WorkspaceData {
         const folderUris: string[] = [];
         const workspaceFileUri = new URI(workspaceFile ? workspaceFile.resource.toString() : '').withScheme('file');
         for (const { path } of data.folders) {
-            const folderUri = new URI(path).withScheme('file');
+            let scheme = 'file';
+            if (path.indexOf('test') > 0) {
+                scheme = 'lifion';
+            }
+            const folderUri = new URI(path).withScheme(scheme);
             const rel = workspaceFileUri.parent.relative(folderUri);
             if (rel) {
                 folderUris.push(rel.toString());
@@ -736,7 +740,11 @@ export namespace WorkspaceData {
                 if (path.startsWith('file:///')) {
                     folders.push(path);
                 } else {
-                    folders.push(workspaceFile.resource.withScheme('file').parent.resolve(path).toString());
+                    let scheme = 'file';
+                    if (path.indexOf('test') > 0) {
+                        scheme = 'lifion';
+                    }
+                    folders.push(workspaceFile.resource.withScheme(scheme).parent.resolve(path).toString());
                 }
 
             }

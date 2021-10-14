@@ -45,6 +45,9 @@
       "path": "../../packages/keymaps"
     },
     {
+      "path": "../../packages/ldf2"
+    },
+    {
       "path": "../../packages/markers"
     },
     {
@@ -124,9 +127,6 @@
     },
     {
       "path": "../../packages/workspace"
-    },
-    {
-      "path": "../api-samples"
     }
   ]
 }

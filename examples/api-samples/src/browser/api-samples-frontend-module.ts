@@ -22,6 +22,12 @@ import { bindSampleOutputChannelWithSeverity } from './output/sample-output-chan
 import { bindSampleMenu } from './menu/sample-menu-contribution';
 import { bindSampleFileWatching } from './file-watching/sample-file-watching-contribution';
 import { bindVSXCommand } from './vsx/sample-vsx-command-contribution';
+import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
+import {
+    LdfCommandContribution, LdfMenuContribution,
+    LifionFileServiceContribution, LifionFileSystemProvider
+} from './ldf2-contribution';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 
 import '../../src/browser/style/branding.css';
 
@@ -33,4 +39,8 @@ export default new ContainerModule(bind => {
     bindSampleFileWatching(bind);
     bindVSXCommand(bind);
     bindSampleFilteredCommandContribution(bind);
+    bind(CommandContribution).to(LdfCommandContribution);
+    bind(MenuContribution).to(LdfMenuContribution);
+    bind(LifionFileSystemProvider).toSelf().inSingletonScope();
+    bind(FileServiceContribution).to(LifionFileServiceContribution).inSingletonScope();
 });

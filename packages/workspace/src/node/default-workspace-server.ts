@@ -113,6 +113,9 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     }
 
     protected workspaceStillExist(workspaceRootUri: string): boolean {
+        if (workspaceRootUri.startsWith('lifion')) {
+            return true;
+        }
         return fs.pathExistsSync(FileUri.fsPath(workspaceRootUri));
     }
 
@@ -141,9 +144,10 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
      * Reads the most recently used workspace root from the user's home directory.
      */
     protected async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
-        const fsPath = await this.getUserStoragePath();
-        const data = await this.readJsonFromFile(fsPath);
-        return RecentWorkspacePathsData.is(data) ? data : undefined;
+        return { recentRoots: ['lifion://test'] };
+        // const fsPath = await this.getUserStoragePath();
+        // const data = await this.readJsonFromFile(fsPath);
+        // return RecentWorkspacePathsData.is(data) ? data : undefined;
     }
 
     protected async readJsonFromFile(fsPath: string): Promise<object | undefined> {

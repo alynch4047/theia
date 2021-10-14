@@ -1,0 +1,36 @@
+{
+  "name": "ldf2",
+  "keywords": [
+    "theia-extension"
+  ],
+  "version": "0.0.0",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "dependencies": {
+    "@theia/core": "latest",
+    "@theia/filesystem": "latest",
+    "@theia/workspace": "latest"
+  },
+  "devDependencies": {
+    "rimraf": "latest",
+    "typescript": "latest"
+  },
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "rimraf lib",
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/ldf2-frontend-module"
+    }
+  ],
+  "description": "DESC LDF2",
+  "main": "index.js",
+  "author": "alynch",
+  "license": "MIT",
+  "private": true
+}

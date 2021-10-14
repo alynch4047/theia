@@ -70,6 +70,9 @@
       "path": "packages/keymaps"
     },
     {
+      "path": "packages/ldf2"
+    },
+    {
       "path": "packages/markers"
     },
     {
