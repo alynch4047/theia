@@ -55,6 +55,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Browser Backend",
+      "runtimeExecutable": "nodemon",
       "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
       "args": [
         "--hostname=0.0.0.0",

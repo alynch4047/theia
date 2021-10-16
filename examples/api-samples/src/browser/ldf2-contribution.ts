@@ -49,7 +49,7 @@ export class LdfCommandContribution implements CommandContribution {
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(LdfCommand, {
-            execute: () => this.messageService.info('Hello World 24!')
+            execute: () => this.messageService.info('Hello World 27!')
         });
         registry.registerCommand(LdfCommand2, {
             execute: () => this.messageService.info(this.workspaceService.toString())
@@ -74,6 +74,7 @@ export class LdfCommandContribution implements CommandContribution {
 }
 
 import { CommonMenus } from '@theia/core/lib/browser';
+import { integer } from 'vscode-languageserver-types';
 
 @injectable()
 export class LdfMenuContribution implements MenuContribution {
@@ -94,13 +95,46 @@ export class LdfMenuContribution implements MenuContribution {
     }
 }
 
-function str2ab(str: string): Uint8Array {
+function str2u8array(str: string): Uint8Array {
     const buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
     const bufView = new Uint8Array(buf);
     for (let i = 0, strLen = str.length; i < strLen; i++) {
         bufView[i] = str.charCodeAt(i);
     }
     return bufView;
+}
+
+async function getDocuments(): Promise<{ ids: string[] }> {
+    const documents = await fetch('http://127.0.0.1:5000/documents', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => response.json());
+    return documents;
+}
+
+async function getDocumentSize(id: string): Promise<{ size: integer }> {
+    const res = await fetch(`http://127.0.0.1:5000/document_size/${id}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => response.json());
+    return res;
+}
+
+async function getDocumentScript(id: string): Promise<{ script: string }> {
+    const res = await fetch(`http://127.0.0.1:5000/document_script/${id}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => response.json());
+    return res;
 }
 
 @injectable()
@@ -133,22 +167,26 @@ export class LifionFileSystemProvider implements Disposable, FileSystemProvider,
         this.onFileWatchErrorEmitter
     );
 
-    copy(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
+    async copy(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         console.info('copy');
         throw new Error('Method not implemented.');
     }
+
     async open(resource: URI, opts: FileOpenOptions): Promise<number> {
         console.info('open');
         return 1;
     }
+
     async close(fd: number): Promise<void> {
         console.info('close');
     }
+
     async read(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number> {
         console.info('read');
         // num bytes read
         return 3;
     }
+
     async write(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number> {
         console.info('write');
         // num bytes written
@@ -168,42 +206,77 @@ export class LifionFileSystemProvider implements Disposable, FileSystemProvider,
         this.messageService.info('watch ' + resource);
         return Disposable.NULL;
     }
+
     async stat(resource: URI): Promise<Stat> {
-        console.info('stat ' + resource.displayName);
-
-        let type;
-        if (resource.path.name === 'test') {
-            type = FileType.Directory;
-        } else {
-            type = FileType.File;
+        console.info('stat ' + resource.path);
+        let path = resource.path.toString();
+        while (path.indexOf('lifion:') >= 1) {
+            path = path.substring(path.indexOf('lifion:'));
         }
+        console.info('path is ' + path);
 
+        let size = 0;
+        let type = FileType.File;
+        if (path.endsWith('/test/')) {
+            type = FileType.Directory;
+            size = 10;
+        } else {
+            try {
+                const ix = path.lastIndexOf('/');
+                const doc_id = path.substring(ix + 1);
+                size = (await getDocumentSize(doc_id)).size;
+            } catch (e) {
+                size = 0;
+            }
+        }
+        console.info('size is ', size);
         return {
             type: type,
             // millis from unix epoch
             ctime: 0,
             mtime: 1000000,
-            size: 10
+            size: size
         };
     }
+
     async mkdir(resource: URI): Promise<void> {
         console.info('mkdir');
     }
+
     async readdir(resource: URI): Promise<[string, FileType][]> {
-        console.info('readdir ' + resource.displayName);
-        return [['childFile', FileType.File]];
+        console.info('read dir ' + resource.displayName + ' 6');
+        const results: [string, FileType][] = [];
+        const ids: { ids: string[] } = await getDocuments();
+        try {
+            ids.ids.forEach(function (id_): void {
+                results.push([id_, FileType.File]);
+            });
+        } catch (e) {
+            console.info('error ' + e);
+        }
+        return results;
     }
+
     async delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
         this.messageService.info('delete');
     }
+
     async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         this.messageService.info('rename');
     }
 
     async readFile(resource: URI): Promise<Uint8Array> {
         console.info('readFile');
-        return str2ab('ABC');
+        let path = resource.path.toString();
+        while (path.indexOf('lifion:') >= 1) {
+            path = path.substring(path.indexOf('lifion:'));
+        }
+        const ix = path.lastIndexOf('/');
+        const doc_id = path.substring(ix + 1);
+        const script = (await getDocumentScript(doc_id)).script;
+        return str2u8array(script);
     }
+
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         console.info('writeFile');
     }
@@ -215,7 +288,6 @@ export class LifionFileSystemProvider implements Disposable, FileSystemProvider,
     async fsPath(resource: URI): Promise<string> {
         return resource.displayName;
     }
-
 }
 
 @injectable()
