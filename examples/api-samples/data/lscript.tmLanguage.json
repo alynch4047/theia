@@ -1,0 +1,60 @@
+{
+  "fileTypes": [
+    "lscript"
+  ],
+  "name": "lscript",
+  "patterns": [
+    {
+      "match": "\\b(if|else|loop|goto|input|output|create|set|invokeDC|callBR|runLogiflow|notify|on|end)\\b",
+      "name": "keyword.control.lscript"
+    },
+    {
+      "comment": "Match identifiers in ALL_CAPS as constants, except when followed by `.`, `(`, `'`, or `\"`.",
+      "match": "\\b([[:upper:]_][[:upper:][:digit:]_]*)\\b(?![\\.\\(\\'\\\"])",
+      "name": "constant.other.allcaps.lscript"
+    },
+    {
+      "match": "\\b(true|false|notset|system|undefined|null|inputs|outputs)\\b",
+      "name": "constant.language.lscript"
+    },
+    {
+      "match": "\\b(text|array|picklist|logical|number|key)\\b",
+      "name": "entity.name.type.lscript"
+    },
+    {
+      "comment": "keyword operators that evaluate to True or False",
+      "match": "\\b(and|in|is|not|or)\\b",
+      "name": "keyword.operator.logical.lscript"
+    },
+    {
+      "comment": "keywords that do not fit into other groups.",
+      "match": "\\b(assert)\\b",
+      "name": "keyword.other.lscript"
+    },
+    {
+      "match": "\\+|\\-|\\*|\\*\\*|/|//|%|<<|>>|&|\\||\\^|~|(?!^)@",
+      "name": "keyword.operator.arithmetic.lscript"
+    },
+    {
+      "match": "\\=",
+      "name": "keyword.operator.assignment.lscript"
+    },
+    {
+      "match": "<\\=|>\\=|\\=\\=|<|>|\\!\\=|isEmpty",
+      "name": "keyword.operator.comparison.lscript"
+    },
+    {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.lscript",
+      "patterns": [
+        {
+          "match": "\\.",
+          "name": "constant.character.escape.lscript"
+        }
+      ]
+    }
+  ],
+  "scopeName": "source.lscript",
+  "uuid": "9ABFC13C-BA23-41D9-AE52-64015E17D18D"
+}

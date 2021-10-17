@@ -25,9 +25,11 @@ import { bindVSXCommand } from './vsx/sample-vsx-command-contribution';
 import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 import {
     LdfCommandContribution, LdfMenuContribution,
-    LifionFileServiceContribution, LifionFileSystemProvider
+    LifionFileServiceContribution, LifionFileSystemProvider,
+    LScriptLanguageGrammarContribution
 } from './ldf2-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 
 import '../../src/browser/style/branding.css';
 
@@ -43,4 +45,5 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).to(LdfMenuContribution);
     bind(LifionFileSystemProvider).toSelf().inSingletonScope();
     bind(FileServiceContribution).to(LifionFileServiceContribution).inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).to(LScriptLanguageGrammarContribution).inSingletonScope();
 });

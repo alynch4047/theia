@@ -9,6 +9,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { FileService, FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
 
+import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+
 import {
     FileSystemProvider, FileSystemProviderWithFileReadWriteCapability,
     FileSystemProviderCapabilities, FileWriteOptions,
@@ -22,7 +24,9 @@ import {
 import { Disposable, DisposableCollection } from '@theia/core';
 import { Emitter } from '@theia/core/lib/common/event';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
-// import { CommonMenus } from '@theia/core/lib/browser';
+
+import { CommonMenus } from '@theia/core/lib/browser';
+import * as iconv from 'iconv-lite';
 
 export const LdfCommand = {
     id: 'Ldf.command',
@@ -38,6 +42,26 @@ export const LdfCommandAddRootLifionFS = {
     id: 'Ldf.commandAddRootLifionFS',
     label: 'Add Root Lifion FS'
 };
+
+@injectable()
+export class LScriptLanguageGrammarContribution implements LanguageGrammarDefinitionContribution {
+
+    readonly id = 'lscript';
+    readonly scopeName = 'source.lscript';
+
+    registerTextmateLanguage(registry: TextmateRegistry): void {
+        registry.registerTextmateGrammarScope(this.scopeName, {
+            // eslint-disable-next-line @typescript-eslint/tslint/config
+            async getGrammarDefinition() {
+                return {
+                    format: 'json',
+                    content: require('../data/yourGrammar.tmLanguage.json'),
+                };
+            }
+        });
+        registry.mapLanguageIdToTextmateGrammar(this.id, this.scopeName);
+    }
+}
 
 @injectable()
 export class LdfCommandContribution implements CommandContribution {
@@ -73,9 +97,6 @@ export class LdfCommandContribution implements CommandContribution {
     };
 }
 
-import { CommonMenus } from '@theia/core/lib/browser';
-import { integer } from 'vscode-languageserver-types';
-
 @injectable()
 export class LdfMenuContribution implements MenuContribution {
 
@@ -95,38 +116,42 @@ export class LdfMenuContribution implements MenuContribution {
     }
 }
 
-function str2u8array(str: string): Uint8Array {
-    const buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
-    const bufView = new Uint8Array(buf);
-    for (let i = 0, strLen = str.length; i < strLen; i++) {
-        bufView[i] = str.charCodeAt(i);
-    }
-    return bufView;
-}
+const dirEntries = new Map();
 
 async function getDocuments(): Promise<{ ids: string[] }> {
-    const documents = await fetch('http://127.0.0.1:5000/documents', {
+    const documents: { ids: string[][] } = await fetch('http://127.0.0.1:5000/documents', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
         },
     })
         .then(response => response.json());
-    return documents;
+    const dir_details: string[] = [];
+    try {
+        for (const doc_info of documents.ids) {
+            console.info(doc_info);
+            dirEntries.set(doc_info[1], doc_info[0]);
+            dir_details.push(doc_info[1]);
+        }
+    } catch (e) {
+        console.info('ERROR ' + e);
+    }
+    return { ids: dir_details };
 }
 
-async function getDocumentSize(id: string): Promise<{ size: integer }> {
-    const res = await fetch(`http://127.0.0.1:5000/document_size/${id}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-    })
-        .then(response => response.json());
-    return res;
-}
+// async function getDocumentSize(id: string): Promise<{ size: integer }> {
+//     const res = await fetch(`http://127.0.0.1:5000/document_size/${id}`, {
+//         method: 'GET',
+//         headers: {
+//             'Content-Type': 'application/json'
+//         },
+//     })
+//         .then(response => response.json());
+//     return res;
+// }
 
-async function getDocumentScript(id: string): Promise<{ script: string }> {
+async function getDocumentScript(doc_name: string): Promise<{ script: string }> {
+    const id = dirEntries.get(doc_name);
     const res = await fetch(`http://127.0.0.1:5000/document_script/${id}`, {
         method: 'GET',
         headers: {
@@ -203,7 +228,6 @@ export class LifionFileSystemProvider implements Disposable, FileSystemProvider,
 
     watch(resource: URI, opts: WatchOptions): Disposable {
         console.info('watch');
-        this.messageService.info('watch ' + resource);
         return Disposable.NULL;
     }
 
@@ -222,9 +246,13 @@ export class LifionFileSystemProvider implements Disposable, FileSystemProvider,
             size = 10;
         } else {
             try {
-                const ix = path.lastIndexOf('/');
-                const doc_id = path.substring(ix + 1);
-                size = (await getDocumentSize(doc_id)).size;
+                // const ix = path.lastIndexOf('/');
+                // const doc_id = path.substring(ix + 1);
+                // size = (await getDocumentSize(doc_id)).size;
+
+                const data = this.readFile(resource);
+                size = (await data).length;
+
             } catch (e) {
                 size = 0;
             }
@@ -272,9 +300,9 @@ export class LifionFileSystemProvider implements Disposable, FileSystemProvider,
             path = path.substring(path.indexOf('lifion:'));
         }
         const ix = path.lastIndexOf('/');
-        const doc_id = path.substring(ix + 1);
-        const script = (await getDocumentScript(doc_id)).script;
-        return str2u8array(script);
+        const doc_name = path.substring(ix + 1);
+        const script = (await getDocumentScript(doc_name)).script;
+        return iconv.encode(script, 'utf8');
     }
 
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
